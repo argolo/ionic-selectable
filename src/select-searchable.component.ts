@@ -26,7 +26,7 @@ import { SelectSearchableValueTemplateDirective } from './select-searchable-valu
             </div>
             <span *ngIf="!valueTemplate">
                 <div class="select-searchable-value-item" *ngFor="let valueItem of _valueItems">
-                    {{_formatItem(valueItem)}}
+                    {{_formatValueItem(valueItem)}}
                 </div>
             </span>
         </div>
@@ -299,6 +299,20 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         }
 
         return this._shouldStoreItemValue ? item : item[this.itemValueField];
+    }
+
+    private _formatValueItem(item: any): string {
+        if (this._shouldStoreItemValue) {
+            console.log(1);
+            // Get item text from the list as we store it's value only.
+            let selectedItem = this.items.find(_item => {
+                return _item[this.itemValueField] === item;
+            });
+
+            return this._formatItem(selectedItem);
+        } else {
+            return this._formatItem(item);
+        }
     }
 
     private _setItems(items: any[]) {

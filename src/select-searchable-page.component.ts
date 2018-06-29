@@ -264,7 +264,6 @@ export class SelectSearchablePageComponent implements OnInit, AfterViewInit {
     private _addSelectedItem(item: any) {
         if (this.selectComponent._shouldStoreItemValue) {
             this.selectedItems.push(this.selectComponent._getItemValue(item));
-
         } else {
             this.selectedItems.push(item);
         }
