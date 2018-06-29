@@ -8,12 +8,13 @@ import { SelectSearchableComponent } from './select-searchable.component';
         <ion-header>
             <ion-navbar [color]="selectComponent.headerColor ? selectComponent.headerColor : null">
                 <ion-title>
-                    <div *ngIf="selectComponent.titleTemplate"
+                    <!-- Use span for titleTemplate to preserve Ionic ellipsis styles. -->
+                    <span *ngIf="selectComponent.titleTemplate"
                         [ngTemplateOutlet]="selectComponent.titleTemplate">
-                    </div>
-                    <div *ngIf="!selectComponent.titleTemplate">
+                    </span>
+                    <span *ngIf="!selectComponent.titleTemplate">
                         {{selectComponent._labelText}}
-                    </div>
+                    </span>
                 </ion-title>
                 <ion-buttons start>
                     <button ion-button (click)="close()">
@@ -49,13 +50,14 @@ import { SelectSearchableComponent } from './select-searchable.component';
                     class="select-searchable-group">
                     <ion-item-divider *ngIf="selectComponent._hasGroups"
                         [color]="selectComponent.groupColor ? selectComponent.groupColor : null">
-                        <div *ngIf="selectComponent.groupTemplate"
+                        <!-- Use span for groupTemplate to preserve Ionic ellipsis styles. -->
+                        <span *ngIf="selectComponent.groupTemplate"
                             [ngTemplateOutlet]="selectComponent.groupTemplate"
                             [ngTemplateOutletContext]="{ group: group }">
-                        </div>
-                        <div *ngIf="!selectComponent.groupTemplate">
+                        </span>
+                        <span *ngIf="!selectComponent.groupTemplate">
                             {{group.text}}
-                        </div>
+                        </span>
                         <div *ngIf="selectComponent.groupRightTemplate" item-right>
                             <div [ngTemplateOutlet]="selectComponent.groupRightTemplate"
                                 [ngTemplateOutletContext]="{ group: group }">
@@ -74,13 +76,14 @@ import { SelectSearchableComponent } from './select-searchable.component';
                             [color]="_isItemSelected(item) ? 'primary' : 'daek'"
                             item-left>
                         </ion-icon>
-                        <div *ngIf="selectComponent.itemTemplate"
+                        <!-- Use span for itemTemplate to preserve Ionic ellipsis styles. -->
+                        <span *ngIf="selectComponent.itemTemplate"
                             [ngTemplateOutlet]="selectComponent.itemTemplate"
                             [ngTemplateOutletContext]="{ item: item }">
-                        </div>
-                        <div *ngIf="!selectComponent.itemTemplate">
+                        </span>
+                        <span *ngIf="!selectComponent.itemTemplate">
                             {{selectComponent._formatItem(item)}}
-                        </div>
+                        </span>
                         <div *ngIf="selectComponent.itemRightTemplate" item-right>
                             <div [ngTemplateOutlet]="selectComponent.itemRightTemplate"
                                 [ngTemplateOutletContext]="{ item: item }">
@@ -117,13 +120,14 @@ import { SelectSearchableComponent } from './select-searchable.component';
                         [color]="_isItemSelected(item) ? 'primary' : 'daek'"
                         item-left>
                     </ion-icon>
-                    <div *ngIf="selectComponent.itemTemplate"
+                    <!-- Use span for itemTemplate to preserve Ionic ellipsis styles. -->
+                    <span *ngIf="selectComponent.itemTemplate"
                         [ngTemplateOutlet]="selectComponent.itemTemplate"
                         [ngTemplateOutletContext]="{ item: item }">
-                    </div>
-                    <div *ngIf="!selectComponent.itemTemplate">
+                    </span>
+                    <span *ngIf="!selectComponent.itemTemplate">
                         {{selectComponent._formatItem(item)}}
-                    </div>
+                    </span>
                     <div *ngIf="selectComponent.itemRightTemplate" item-right>
                         <div [ngTemplateOutlet]="selectComponent.itemRightTemplate"
                             [ngTemplateOutletContext]="{ item: item }">
