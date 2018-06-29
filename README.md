@@ -18,6 +18,7 @@ An Ionic component similar to `ion-select`, that allows to search items, includi
 * [Getting started](#getting-started)
 * [FAQ](../../wiki/FAQ)
 * [Documentation](../../wiki/Documentation)
+* [Theming](../../wiki/Theming)
 
 ## Getting started
 
