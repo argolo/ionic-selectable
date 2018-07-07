@@ -90,5 +90,5 @@ export class HomePage {
 6. That is just a small part of what `ionic-select-searchable` is capable of.  
 See [more samples](https://stackblitz.com/@eakoriakin) and explore [docs](https://github.com/eakoriakin/ionic-select-searchable/wiki/Documentation) and [FAQ](https://github.com/eakoriakin/ionic-select-searchable/wiki/FAQ) to learn more.
 
-## Support this project
+## Share it
 If you find this component useful, please star the repo to let others know that it's reliable. Also, share it with friends and colleagues who might find it useful as well. Thank you 😄
