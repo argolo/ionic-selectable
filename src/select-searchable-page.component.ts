@@ -98,7 +98,7 @@ import { SelectSearchableComponent } from './select-searchable.component';
                 (ionInfinite)="_getMoreItems($event)">
                 <ion-infinite-scroll-content></ion-infinite-scroll-content>
             </ion-infinite-scroll>
-            <ion-list no-margin *ngIf="selectComponent.hasVirtualScroll"
+            <ion-list no-margin *ngIf="selectComponent.hasVirtualScroll && _filteredGroups.length"
                 [virtualScroll]="_filteredGroups[0].items"
                 [approxItemHeight]="selectComponent.virtualScrollApproxItemHeight"
                 [approxItemWidth]="selectComponent.virtualScrollApproxItemWidth"
@@ -135,7 +135,9 @@ import { SelectSearchableComponent } from './select-searchable.component';
                     </div>
                 </button>
             </ion-list>
-            <div *ngIf="!_filteredGroups.length" margin>{{selectComponent.noItemsFoundText}}</div>
+            <div *ngIf="!_filteredGroups.length || !_filteredGroups[0].items.length" margin>
+                {{selectComponent.noItemsFoundText}}
+            </div>
         </ion-content>
         <ion-footer *ngIf="selectComponent.canReset || selectComponent.isMultiple">
             <ion-toolbar padding>
