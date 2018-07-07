@@ -7,6 +7,7 @@ import { SelectSearchableItemRightTemplateDirective } from './select-searchable-
 import { SelectSearchableItemTemplateDirective } from './select-searchable-item-template.directive';
 import { SelectSearchableMessageTemplateDirective } from './select-searchable-message-template.directive';
 import { SelectSearchablePageComponent } from './select-searchable-page.component';
+import { SelectSearchablePlaceholderTemplateDirective } from './select-searchable-placeholder-template.directive';
 import { SelectSearchableTitleTemplateDirective } from './select-searchable-title-template.directive';
 import { SelectSearchableValueTemplateDirective } from './select-searchable-value-template.directive';
 
@@ -24,11 +25,18 @@ import { SelectSearchableValueTemplateDirective } from './select-searchable-valu
                     [ngTemplateOutletContext]="{ value: _valueItems[0] }">
                 </div>
             </div>
-            <span *ngIf="!valueTemplate">
+            <span *ngIf="!valueTemplate && _valueItems.length">
                 <div class="select-searchable-value-item" *ngFor="let valueItem of _valueItems">
                     {{_formatValueItem(valueItem)}}
                 </div>
             </span>
+            <div *ngIf="_hasPlaceholder && placeholderTemplate" class="select-searchable-value-item">
+                <div [ngTemplateOutlet]="placeholderTemplate">
+                </div>
+            </div>
+            <div class="select-searchable-value-item" *ngIf="_hasPlaceholder && !placeholderTemplate">
+                {{placeholder}}
+            </div>
         </div>
         <div class="select-searchable-icon">
             <div class="select-searchable-icon-inner"></div>
@@ -56,7 +64,11 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     }
     @HostBinding('class.select-searchable-has-value')
     private get _hasValueCssClass(): boolean {
-        return this._hasValue();
+        return this.hasValue();
+    }
+    @HostBinding('class.select-searchable-has-placeholder')
+    private get _hasPlaceholderCssClass(): boolean {
+        return this._hasPlaceholder;
     }
     private _isOnSearchEnabled = true;
     private _isEnabled = true;
@@ -76,6 +88,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     _hasGroups: boolean;
     _isSearching: boolean;
     _labelText: string;
+    _hasPlaceholder: boolean;
     get value(): any {
         return this._value;
     }
@@ -96,6 +109,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         }
 
         this._setIonItemHasValue();
+        this._setHasPlaceholder();
     }
     @Input()
     items: any[] = [];
@@ -148,6 +162,8 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     @Input()
     searchPlaceholder: string;
     @Input()
+    placeholder: string;
+    @Input()
     isMultiple: boolean;
     @Input()
     noItemsFoundText = 'No items found.';
@@ -181,6 +197,8 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     itemRightTemplate: TemplateRef<any>;
     @ContentChild(SelectSearchableTitleTemplateDirective, { read: TemplateRef })
     titleTemplate: TemplateRef<any>;
+    @ContentChild(SelectSearchablePlaceholderTemplateDirective, { read: TemplateRef })
+    placeholderTemplate: TemplateRef<any>;
     @ContentChild(SelectSearchableMessageTemplateDirective, { read: TemplateRef })
     messageTemplate: TemplateRef<any>;
     @ContentChild(SelectSearchableGroupTemplateDirective, { read: TemplateRef })
@@ -303,7 +321,6 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
 
     private _formatValueItem(item: any): string {
         if (this._shouldStoreItemValue) {
-            console.log(1);
             // Get item text from the list as we store it's value only.
             let selectedItem = this.items.find(_item => {
                 return _item[this.itemValueField] === item;
@@ -373,15 +390,13 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
 
     private _setIonItemHasValue() {
         // Apply value CSS class for proper stylying of ion-item/ion-label.
-        this.ionItem.setElementClass('item-input-has-value', this._hasValue());
+        this.ionItem.setElementClass('item-input-has-value', this.hasValue());
     }
 
-    private _hasValue(): boolean {
-        if (this.isMultiple) {
-            return this._valueItems.length !== 0;
-        } else {
-            return this._valueItems.length !== 0 && !this._isNullOrWhiteSpace(this._valueItems[0]);
-        }
+    private _setHasPlaceholder() {
+        this._hasPlaceholder = !this.hasValue() &&
+            (!this._isNullOrWhiteSpace(this.placeholder) || this.placeholderTemplate) ?
+            true : false;
     }
 
     private propagateChange = (_: any) => { };
@@ -427,6 +442,14 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         if (itemsChanges) {
             this._setItems(this.items);
             this._setValue(this.value);
+        }
+    }
+
+    public hasValue(): boolean {
+        if (this.isMultiple) {
+            return this._valueItems.length !== 0;
+        } else {
+            return this._valueItems.length !== 0 && !this._isNullOrWhiteSpace(this._valueItems[0]);
         }
     }
 

@@ -7,6 +7,7 @@ import { SelectSearchableItemRightTemplateDirective } from './select-searchable-
 import { SelectSearchableItemTemplateDirective } from './select-searchable-item-template.directive';
 import { SelectSearchableMessageTemplateDirective } from './select-searchable-message-template.directive';
 import { SelectSearchablePageComponent } from './select-searchable-page.component';
+import { SelectSearchablePlaceholderTemplateDirective } from './select-searchable-placeholder-template.directive';
 import { SelectSearchableTitleTemplateDirective } from './select-searchable-title-template.directive';
 import { SelectSearchableValueTemplateDirective } from './select-searchable-value-template.directive';
 import { SelectSearchableComponent } from './select-searchable.component';
@@ -16,6 +17,7 @@ export { SelectSearchableItemRightTemplateDirective } from './select-searchable-
 export { SelectSearchableItemTemplateDirective } from './select-searchable-item-template.directive';
 export { SelectSearchableMessageTemplateDirective } from './select-searchable-message-template.directive';
 export { SelectSearchablePageComponent } from './select-searchable-page.component';
+export { SelectSearchablePlaceholderTemplateDirective } from './select-searchable-placeholder-template.directive';
 export { SelectSearchableTitleTemplateDirective } from './select-searchable-title-template.directive';
 export { SelectSearchableValueTemplateDirective } from './select-searchable-value-template.directive';
 export { SelectSearchableComponent } from './select-searchable.component';
@@ -34,6 +36,7 @@ let components = [SelectSearchableComponent, SelectSearchablePageComponent];
         SelectSearchableItemTemplateDirective,
         SelectSearchableItemRightTemplateDirective,
         SelectSearchableTitleTemplateDirective,
+        SelectSearchablePlaceholderTemplateDirective,
         SelectSearchableMessageTemplateDirective,
         SelectSearchableGroupTemplateDirective,
         SelectSearchableGroupRightTemplateDirective
@@ -44,6 +47,7 @@ let components = [SelectSearchableComponent, SelectSearchablePageComponent];
         SelectSearchableItemTemplateDirective,
         SelectSearchableItemRightTemplateDirective,
         SelectSearchableTitleTemplateDirective,
+        SelectSearchablePlaceholderTemplateDirective,
         SelectSearchableMessageTemplateDirective,
         SelectSearchableGroupTemplateDirective,
         SelectSearchableGroupRightTemplateDirective
