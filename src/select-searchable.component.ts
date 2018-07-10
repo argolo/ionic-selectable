@@ -384,11 +384,19 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     }
 
     private _setIonItemHasFocus(hasFocus: boolean) {
+        if (!this.ionItem) {
+            return;
+        }
+
         // Apply focus CSS class for proper stylying of ion-item/ion-label.
         this.ionItem.setElementClass('item-input-has-focus', hasFocus);
     }
 
     private _setIonItemHasValue() {
+        if (!this.ionItem) {
+            return;
+        }
+
         // Apply value CSS class for proper stylying of ion-item/ion-label.
         this.ionItem.setElementClass('item-input-has-value', this.hasValue());
     }
