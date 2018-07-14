@@ -1,0 +1,127 @@
+<ion-header>
+    <ion-navbar [color]="selectComponent.headerColor ? selectComponent.headerColor : null">
+        <ion-title>
+            <!-- Use span for titleTemplate to preserve Ionic ellipsis styles. -->
+            <span *ngIf="selectComponent.titleTemplate" [ngTemplateOutlet]="selectComponent.titleTemplate">
+            </span>
+            <span *ngIf="!selectComponent.titleTemplate">
+                {{selectComponent._labelText}}
+            </span>
+        </ion-title>
+        <ion-buttons start>
+            <button ion-button (click)="_close()">
+                <span ion-text showWhen="ios">
+                    {{selectComponent.closeButtonText}}
+                </span>
+                <ion-icon name="md-close" hideWhen="ios"></ion-icon>
+            </button>
+        </ion-buttons>
+    </ion-navbar>
+    <ion-toolbar *ngIf="selectComponent.canSearch || selectComponent.messageTemplate">
+        <ion-searchbar *ngIf="selectComponent.canSearch" #searchbarComponent [(ngModel)]="selectComponent._filterText"
+            (ionInput)="selectComponent._filterItems()" [placeholder]="selectComponent.searchPlaceholder || 'Search'"
+            [debounce]="selectComponent.searchDebounce">
+        </ion-searchbar>
+        <div class="select-searchable-page-message" *ngIf="selectComponent.messageTemplate">
+            <div [ngTemplateOutlet]="selectComponent.messageTemplate">
+            </div>
+        </div>
+    </ion-toolbar>
+</ion-header>
+<ion-content>
+    <div class="select-searchable-spinner" *ngIf="selectComponent._isSearching">
+        <div class="select-searchable-spinner-background"></div>
+        <ion-spinner></ion-spinner>
+    </div>
+    <ion-list no-margin *ngIf="!selectComponent.hasVirtualScroll && selectComponent._filteredGroups.length">
+        <ion-item-group *ngFor="let group of selectComponent._filteredGroups" class="select-searchable-group">
+            <ion-item-divider *ngIf="selectComponent._hasGroups" [color]="selectComponent.groupColor ? selectComponent.groupColor : null">
+                <!-- Use span for groupTemplate to preserve Ionic ellipsis styles. -->
+                <span *ngIf="selectComponent.groupTemplate" [ngTemplateOutlet]="selectComponent.groupTemplate"
+                    [ngTemplateOutletContext]="{ group: group }">
+                </span>
+                <span *ngIf="!selectComponent.groupTemplate">
+                    {{group.text}}
+                </span>
+                <div *ngIf="selectComponent.groupRightTemplate" item-right>
+                    <div [ngTemplateOutlet]="selectComponent.groupRightTemplate" [ngTemplateOutletContext]="{ group: group }">
+                    </div>
+                </div>
+            </ion-item-divider>
+            <button ion-item detail-none *ngFor="let item of group.items" (click)="_select(item)"
+                class="select-searchable-item" [ngClass]="{
+                    'select-searchable-item-is-selected': _isItemSelected(item),
+                    'select-searchable-item-is-disabled': _isItemDisabled(item)
+                }" [disabled]="_isItemDisabled(item)">
+                <ion-icon [name]="_isItemSelected(item) ? 'checkmark-circle' : 'radio-button-off'"
+                    [color]="_isItemSelected(item) ? 'primary' : 'daek'" item-left>
+                </ion-icon>
+                <!-- Use span for itemTemplate to preserve Ionic ellipsis styles. -->
+                <span *ngIf="selectComponent.itemTemplate" [ngTemplateOutlet]="selectComponent.itemTemplate"
+                    [ngTemplateOutletContext]="{ item: item }">
+                </span>
+                <span *ngIf="!selectComponent.itemTemplate">
+                    {{selectComponent._formatItem(item)}}
+                </span>
+                <div *ngIf="selectComponent.itemRightTemplate" item-right>
+                    <div [ngTemplateOutlet]="selectComponent.itemRightTemplate" [ngTemplateOutletContext]="{ item: item }">
+                    </div>
+                </div>
+            </button>
+        </ion-item-group>
+    </ion-list>
+    <ion-infinite-scroll *ngIf="!selectComponent.hasVirtualScroll" [enabled]="selectComponent.hasInfiniteScroll"
+        (ionInfinite)="_getMoreItems($event)">
+        <ion-infinite-scroll-content></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+    <ion-list no-margin *ngIf="selectComponent.hasVirtualScroll && selectComponent._filteredGroups.length"
+        [virtualScroll]="selectComponent._filteredGroups[0].items" [approxItemHeight]="selectComponent.virtualScrollApproxItemHeight"
+        [approxItemWidth]="selectComponent.virtualScrollApproxItemWidth" [bufferRatio]="selectComponent.virtualScrollBufferRatio"
+        [headerFn]="selectComponent.virtualScrollHeaderFn">
+        <ion-item-divider *virtualHeader="let header" [color]="selectComponent.groupColor ? selectComponent.groupColor : null">
+            {{header}}
+        </ion-item-divider>
+        <button ion-item detail-none *virtualItem="let item" (click)="_select(item)" class="select-searchable-item"
+            [ngClass]="{
+                'select-searchable-item-is-selected': _isItemSelected(item),
+                'select-searchable-item-is-disabled': _isItemDisabled(item)
+            }" [disabled]="_isItemDisabled(item)">
+            <ion-icon [name]="_isItemSelected(item) ? 'checkmark-circle' : 'radio-button-off'"
+                [color]="_isItemSelected(item) ? 'primary' : 'daek'" item-left>
+            </ion-icon>
+            <!-- Use span for itemTemplate to preserve Ionic ellipsis styles. -->
+            <span *ngIf="selectComponent.itemTemplate" [ngTemplateOutlet]="selectComponent.itemTemplate"
+                [ngTemplateOutletContext]="{ item: item }">
+            </span>
+            <span *ngIf="!selectComponent.itemTemplate">
+                {{selectComponent._formatItem(item)}}
+            </span>
+            <div *ngIf="selectComponent.itemRightTemplate" item-right>
+                <div [ngTemplateOutlet]="selectComponent.itemRightTemplate" [ngTemplateOutletContext]="{ item: item }">
+                </div>
+            </div>
+        </button>
+    </ion-list>
+    <div *ngIf="!selectComponent._filteredGroups.length || !selectComponent._filteredGroups[0].items.length"
+        margin>
+        {{selectComponent.noItemsFoundText}}
+    </div>
+</ion-content>
+<ion-footer *ngIf="selectComponent.canReset || selectComponent.isMultiple">
+    <ion-toolbar padding>
+        <ion-row>
+            <ion-col no-padding *ngIf="selectComponent.canReset" [attr.col-6]="selectComponent.canReset && selectComponent.isMultiple ? '' : null"
+                [attr.col-12]="selectComponent.canReset && !selectComponent.isMultiple ? '' : null">
+                <button ion-button full no-margin (click)="_reset()" [disabled]="!_selectedItems.length">
+                    {{selectComponent.resetButtonText}}
+                </button>
+            </ion-col>
+            <ion-col no-padding *ngIf="selectComponent.isMultiple" [attr.col-6]="selectComponent.canReset && selectComponent.isMultiple ? '' : null"
+                [attr.col-12]="!selectComponent.canReset && selectComponent.isMultiple ? '' : null">
+                <button ion-button full no-margin (click)="_ok()" [disabled]="!selectComponent.isOkButtonEnabled">
+                    {{selectComponent.okButtonText}}
+                </button>
+            </ion-col>
+        </ion-row>
+    </ion-toolbar>
+</ion-footer>

@@ -13,38 +13,7 @@ import { SelectSearchableValueTemplateDirective } from './select-searchable-valu
 
 @Component({
     selector: 'select-searchable',
-    template: `
-        <div class="select-searchable-value">
-            <div *ngIf="valueTemplate && _valueItems.length && isMultiple"
-                [ngTemplateOutlet]="valueTemplate"
-                [ngTemplateOutletContext]="{ value: _valueItems }">
-            </div>
-            <div class="select-searchable-value-item"
-                *ngIf="valueTemplate && _valueItems.length && !isMultiple">
-                <div [ngTemplateOutlet]="valueTemplate"
-                    [ngTemplateOutletContext]="{ value: _valueItems[0] }">
-                </div>
-            </div>
-            <span *ngIf="!valueTemplate && _valueItems.length">
-                <div class="select-searchable-value-item" *ngFor="let valueItem of _valueItems">
-                    {{_formatValueItem(valueItem)}}
-                </div>
-            </span>
-            <div *ngIf="_hasPlaceholder && placeholderTemplate" class="select-searchable-value-item">
-                <div [ngTemplateOutlet]="placeholderTemplate">
-                </div>
-            </div>
-            <div class="select-searchable-value-item" *ngIf="_hasPlaceholder && !placeholderTemplate">
-                {{placeholder}}
-            </div>
-        </div>
-        <div class="select-searchable-icon">
-            <div class="select-searchable-icon-inner"></div>
-        </div>
-        <button aria-haspopup="true" ion-button="item-cover" class="item-cover"
-            [disabled]="!isEnabled">
-        </button>
-    `,
+    templateUrl: './select-searchable.template.html',
     providers: [{
         provide: NG_VALUE_ACCESSOR,
         useExisting: forwardRef(() => SelectSearchableComponent),
@@ -55,9 +24,9 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     @HostBinding('class.select-searchable')
     private _cssClass = true;
     @HostBinding('class.select-searchable-ios')
-    private _isIos: boolean;
+    _isIos: boolean;
     @HostBinding('class.select-searchable-md')
-    private _isMD: boolean;
+    _isMD: boolean;
     @HostBinding('class.select-searchable-is-multiple')
     private get _isMultipleCssClass(): boolean {
         return this.isMultiple;
@@ -85,6 +54,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     _groups: any[] = [];
     _itemsToConfirm: any[] = [];
     _selectPageComponent: SelectSearchablePageComponent;
+    _filteredGroups: any[];
     _hasGroups: boolean;
     _isSearching: boolean;
     _labelText: string;
@@ -319,21 +289,57 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         return this._shouldStoreItemValue ? item : item[this.itemValueField];
     }
 
-    private _formatValueItem(item: any): string {
-        if (this._shouldStoreItemValue) {
-            // Get item text from the list as we store it's value only.
-            let selectedItem = this.items.find(_item => {
-                return _item[this.itemValueField] === item;
-            });
+    _filterItems() {
+        if (this._hasSearch()) {
+            let infiniteScroll = this._selectPageComponent ?
+                this._selectPageComponent._infiniteScroll : null;
 
-            return this._formatItem(selectedItem);
+            // Delegate filtering to the event.
+            this._emitSearch(infiniteScroll);
         } else {
-            return this._formatItem(item);
+            // Default filtering.
+            let groups = [];
+
+            if (!this._filterText || !this._filterText.trim()) {
+                groups = this._groups;
+            } else {
+                let filterText = this._filterText.trim().toLowerCase();
+
+                this._groups.forEach(group => {
+                    let items = group.items.filter(item => {
+                        let itemText = (this.itemTextField ?
+                            item[this.itemTextField] : item).toString().toLowerCase();
+                        return itemText.indexOf(filterText) !== -1;
+                    });
+
+                    if (items.length) {
+                        groups.push({
+                            value: group.value,
+                            text: group.text,
+                            items: items
+                        });
+                    }
+                });
+
+                // No items found.
+                if (!groups.length) {
+                    groups.push({
+                        items: []
+                    });
+                }
+            }
+
+            this._filteredGroups = groups;
         }
     }
 
     private _setItems(items: any[]) {
-        let groups = [];
+        // It's important to have an empty starting group with empty items (groups[0].items),
+        // because we bind to it when using VirtualScroll.
+        // See https://github.com/eakoriakin/ionic-select-searchable/issues/70.
+        let groups: any[] = [{
+            items: items || []
+        }];
 
         if (items && items.length) {
             if (this._hasGroups) {
@@ -353,20 +359,23 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
                         });
                     }
                 });
-
-            } else {
-                groups.push({
-                    items: items
-                });
             }
         }
 
-        // The original reference of the array should be preserved to keep two-way data binding
-        // between SelectSearchable and SelectSearchablePage.
-        this._groups.splice(0, this._groups.length);
+        this._groups = groups;
+    }
 
-        // Add new items to the array.
-        Array.prototype.push.apply(this._groups, groups);
+    private _formatValueItem(item: any): string {
+        if (this._shouldStoreItemValue) {
+            // Get item text from the list as we store it's value only.
+            let selectedItem = this.items.find(_item => {
+                return _item[this.itemValueField] === item;
+            });
+
+            return this._formatItem(selectedItem);
+        } else {
+            return this._formatItem(item);
+        }
     }
 
     private _setValue(value: any) {
@@ -474,6 +483,8 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
                 return;
             }
 
+            self._filterItems();
+
             self._isOpened = true;
             self._modal = self._modalController.create(SelectSearchablePageComponent, {
                 selectComponent: self
@@ -566,5 +577,6 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         // See https://github.com/eakoriakin/ionic-select-searchable/issues/44.
         // Refresh items manually.
         this._setItems(this.items);
+        this._filteredGroups = this._groups;
     }
 }

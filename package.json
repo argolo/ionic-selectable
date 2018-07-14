@@ -22,6 +22,8 @@
         "gulp": "^3.9.1",
         "gulp-rename": "^1.2.2",
         "gulp-rollup": "^2.15.0",
+        "gulp-header": "2.0.5",
+        "gulp-sass": "4.0.1",
         "ionic-angular": "3.6.0",
         "ionicons": ">=3.0.0",
         "node-sass": "^4.5.2",
@@ -38,18 +40,5 @@
     },
     "engines": {
         "node": ">=6.0.0"
-    },
-    "scripts": {
-        "build": "gulp build",
-        "build:watch": "gulp",
-        "docs": "npm run docs:build",
-        "docs:build": "compodoc -p tsconfig.json -n select-searchable -d docs --hideGenerator",
-        "docs:serve": "npm run docs:build -- -s",
-        "docs:watch": "npm run docs:build -- -s -w",
-        "lint": "tslint --type-check --project tsconfig.json src/**/*.ts"
-    },
-    "dependencies": {
-        "gulp-header": "2.0.5",
-        "gulp-sass": "4.0.1"
     }
 }
