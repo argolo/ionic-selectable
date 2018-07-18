@@ -34,7 +34,6 @@ export class SelectSearchablePageComponent implements AfterViewInit {
     private _selectedItems: any[] = [];
     @ViewChild(Content)
     _content: Content;
-    _infiniteScroll: InfiniteScroll;
     selectComponent: SelectSearchableComponent;
 
     constructor(
@@ -114,11 +113,10 @@ export class SelectSearchablePageComponent implements AfterViewInit {
     private _getMoreItems(infiniteScroll: InfiniteScroll) {
         // TODO: Try to get infiniteScroll via ViewChild. Maybe it works in a newer Ionic version.
         // For now assign it here.
-        this._infiniteScroll = infiniteScroll;
+        this.selectComponent._infiniteScroll = infiniteScroll;
 
         this.selectComponent.onInfiniteScroll.emit({
             component: this.selectComponent,
-            infiniteScroll: infiniteScroll,
             text: this.selectComponent._filterText
         });
     }

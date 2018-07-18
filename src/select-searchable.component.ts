@@ -59,6 +59,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     _isSearching: boolean;
     _labelText: string;
     _hasPlaceholder: boolean;
+    _infiniteScroll: InfiniteScroll;
     get value(): any {
         return this._value;
     }
@@ -248,14 +249,13 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         });
     }
 
-    _emitSearch(infiniteScroll: InfiniteScroll) {
+    _emitSearch() {
         if (!this.canSearch) {
             return;
         }
 
         this.onSearch.emit({
             component: this,
-            infiniteScroll: infiniteScroll,
             text: this._filterText
         });
     }
@@ -291,11 +291,8 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
 
     _filterItems() {
         if (this._hasSearch()) {
-            let infiniteScroll = this._selectPageComponent ?
-                this._selectPageComponent._infiniteScroll : null;
-
             // Delegate filtering to the event.
-            this._emitSearch(infiniteScroll);
+            this._emitSearch();
         } else {
             // Default filtering.
             let groups = [];
@@ -519,6 +516,9 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
                 return;
             }
 
+            // Delete old instance of infinite scroll, to avoid "Cannot read property 'enableEvents' of null"
+            // error from it when page is opened next time.
+            self._infiniteScroll = null;
             self._isOpened = false;
             self._modal.dismiss().then(() => {
                 self._setIonItemHasFocus(false);
@@ -576,6 +576,32 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         // ngDoCheck() doesn't work as _itemsDiffer fails to detect changes.
         // See https://github.com/eakoriakin/ionic-select-searchable/issues/44.
         // Refresh items manually.
+        this._setItems(this.items);
+        this._filteredGroups = this._groups;
+    }
+
+    public enableInfiniteScroll() {
+        if (!this._infiniteScroll) {
+            return;
+        }
+
+        this._infiniteScroll.enable(true);
+    }
+
+    public disableInfiniteScroll() {
+        if (!this._infiniteScroll) {
+            return;
+        }
+
+        this._infiniteScroll.enable(false);
+    }
+
+    public endInfiniteScroll() {
+        if (!this._infiniteScroll) {
+            return;
+        }
+
+        this._infiniteScroll.complete();
         this._setItems(this.items);
         this._filteredGroups = this._groups;
     }
