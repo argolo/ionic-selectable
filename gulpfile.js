@@ -28,17 +28,17 @@ gulp.task('copy-html', function () {
         .pipe(gulp.dest(distFolder));
 });
 
-gulp.task('clean-html', function () {
-    var files = fs.readdirSync(distFolder);
+// gulp.task('clean-html', function () {
+//     var files = fs.readdirSync(distFolder);
 
-    for (var i = 0; i < files.length; i++) {
-        if (files[i].indexOf('.html') !== -1) {
-            fs.removeSync(`${distFolder}/${files[i]}`);
-        }
-    }
+//     for (var i = 0; i < files.length; i++) {
+//         if (files[i].indexOf('.html') !== -1) {
+//             fs.removeSync(`${distFolder}/${files[i]}`);
+//         }
+//     }
 
-    return Promise.resolve();
-});
+//     return Promise.resolve();
+// });
 
 // Inlines template (.html) and style (.css) files into the the component .ts files.
 gulp.task('inline-resources', function () {
@@ -191,7 +191,9 @@ gulp.task('compile', function () {
         'copy-css',
         'copy-and-minify-css',
         'clean-build',
-        'clean-html',
+        // Can't remove templates as it will break --prod build, becuase
+        // references to the templates a stored in metadata file.
+        // 'clean-html',
         function (error) {
             if (error) {
                 console.log(error.message);
