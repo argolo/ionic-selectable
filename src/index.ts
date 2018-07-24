@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { IonicPageModule } from 'ionic-angular';
+import { SelectSearchableCloseButtonTemplateDirective } from './select-searchable-close-button-template.directive.';
 import { SelectSearchableGroupRightTemplateDirective } from './select-searchable-group-right-template.directive';
 import { SelectSearchableGroupTemplateDirective } from './select-searchable-group-template.directive';
 import { SelectSearchableItemRightTemplateDirective } from './select-searchable-item-right-template.directive';
@@ -11,6 +12,7 @@ import { SelectSearchablePlaceholderTemplateDirective } from './select-searchabl
 import { SelectSearchableTitleTemplateDirective } from './select-searchable-title-template.directive';
 import { SelectSearchableValueTemplateDirective } from './select-searchable-value-template.directive';
 import { SelectSearchableComponent } from './select-searchable.component';
+export { SelectSearchableCloseButtonTemplateDirective } from './select-searchable-close-button-template.directive.';
 export { SelectSearchableGroupRightTemplateDirective } from './select-searchable-group-right-template.directive';
 export { SelectSearchableGroupTemplateDirective } from './select-searchable-group-template.directive';
 export { SelectSearchableItemRightTemplateDirective } from './select-searchable-item-right-template.directive';
@@ -39,7 +41,8 @@ let components = [SelectSearchableComponent, SelectSearchablePageComponent];
         SelectSearchablePlaceholderTemplateDirective,
         SelectSearchableMessageTemplateDirective,
         SelectSearchableGroupTemplateDirective,
-        SelectSearchableGroupRightTemplateDirective
+        SelectSearchableGroupRightTemplateDirective,
+        SelectSearchableCloseButtonTemplateDirective
     ],
     exports: [
         ...components,
@@ -50,7 +53,8 @@ let components = [SelectSearchableComponent, SelectSearchablePageComponent];
         SelectSearchablePlaceholderTemplateDirective,
         SelectSearchableMessageTemplateDirective,
         SelectSearchableGroupTemplateDirective,
-        SelectSearchableGroupRightTemplateDirective
+        SelectSearchableGroupRightTemplateDirective,
+        SelectSearchableCloseButtonTemplateDirective
     ],
     entryComponents: components
 })

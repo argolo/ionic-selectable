@@ -10,10 +10,13 @@
         </ion-title>
         <ion-buttons start>
             <button ion-button (click)="_close()">
-                <span ion-text showWhen="ios">
+                <span *ngIf="selectComponent.closeButtonTemplate" [ngTemplateOutlet]="selectComponent.closeButtonTemplate">
+                </span>
+                <span *ngIf="!selectComponent.closeButtonTemplate" ion-text showWhen="ios">
                     {{selectComponent.closeButtonText}}
                 </span>
-                <ion-icon name="md-close" hideWhen="ios"></ion-icon>
+                <ion-icon *ngIf="!selectComponent.closeButtonTemplate" name="md-close" hideWhen="ios">
+                </ion-icon>
             </button>
         </ion-buttons>
     </ion-navbar>

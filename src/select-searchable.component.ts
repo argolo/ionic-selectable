@@ -1,6 +1,7 @@
 import { Component, ContentChild, DoCheck, EventEmitter, forwardRef, HostBinding, HostListener, Input, IterableDiffer, IterableDiffers, OnDestroy, OnInit, Optional, Output, TemplateRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Form, InfiniteScroll, Item, Modal, ModalController, Platform } from 'ionic-angular';
+import { SelectSearchableCloseButtonTemplateDirective } from './select-searchable-close-button-template.directive.';
 import { SelectSearchableGroupRightTemplateDirective } from './select-searchable-group-right-template.directive';
 import { SelectSearchableGroupTemplateDirective } from './select-searchable-group-template.directive';
 import { SelectSearchableItemRightTemplateDirective } from './select-searchable-item-right-template.directive';
@@ -176,6 +177,8 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     groupTemplate: TemplateRef<any>;
     @ContentChild(SelectSearchableGroupRightTemplateDirective, { read: TemplateRef })
     groupRightTemplate: TemplateRef<any>;
+    @ContentChild(SelectSearchableCloseButtonTemplateDirective, { read: TemplateRef })
+    closeButtonTemplate: TemplateRef<any>;
     get itemsToConfirm(): any[] {
         return this._itemsToConfirm;
     }
