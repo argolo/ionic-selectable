@@ -117,7 +117,7 @@ export class SelectSearchablePageComponent implements AfterViewInit {
 
         this.selectComponent.onInfiniteScroll.emit({
             component: this.selectComponent,
-            text: this.selectComponent._filterText
+            text: this.selectComponent._searchText
         });
     }
 
@@ -166,7 +166,7 @@ export class SelectSearchablePageComponent implements AfterViewInit {
             });
 
             if (!this.selectComponent._hasSearch()) {
-                this.selectComponent._filterText = '';
+                this.selectComponent._searchText = '';
             }
         });
     }

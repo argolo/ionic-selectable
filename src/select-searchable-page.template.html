@@ -21,7 +21,7 @@
         </ion-buttons>
     </ion-navbar>
     <ion-toolbar *ngIf="selectComponent.canSearch || selectComponent.messageTemplate">
-        <ion-searchbar *ngIf="selectComponent.canSearch" #searchbarComponent [(ngModel)]="selectComponent._filterText"
+        <ion-searchbar *ngIf="selectComponent.canSearch" #searchbarComponent [(ngModel)]="selectComponent._searchText"
             (ionInput)="selectComponent._filterItems()" [placeholder]="selectComponent.searchPlaceholder || 'Search'"
             [debounce]="selectComponent.searchDebounce">
         </ion-searchbar>
@@ -105,9 +105,12 @@
             </div>
         </button>
     </ion-list>
-    <div *ngIf="!selectComponent._filteredGroups.length || !selectComponent._filteredGroups[0].items.length"
-        margin>
-        {{selectComponent.noItemsFoundText}}
+    <div *ngIf="!selectComponent._filteredGroups.length || !selectComponent._filteredGroups[0].items.length">
+        <span *ngIf="selectComponent.noItemsTemplate" [ngTemplateOutlet]="selectComponent.noItemsTemplate">
+        </span>
+        <div *ngIf="!selectComponent.noItemsTemplate" margin>
+            {{selectComponent.noItemsText}}
+        </div>
     </div>
 </ion-content>
 <ion-footer *ngIf="selectComponent.canReset || selectComponent.isMultiple">

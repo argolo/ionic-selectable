@@ -46,6 +46,10 @@
         .item-inner .input-wrapper {
             align-items: normal;
         }
+        ion-label {
+            flex: 1;
+            max-width: initial;
+        }
     }
 }
 

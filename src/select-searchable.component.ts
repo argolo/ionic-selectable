@@ -1,4 +1,4 @@
-import { Component, ContentChild, DoCheck, EventEmitter, forwardRef, HostBinding, HostListener, Input, IterableDiffer, IterableDiffers, OnDestroy, OnInit, Optional, Output, TemplateRef } from '@angular/core';
+import { Component, ContentChild, DoCheck, ElementRef, EventEmitter, forwardRef, HostBinding, HostListener, Input, IterableDiffer, IterableDiffers, OnDestroy, OnInit, Optional, Output, TemplateRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Form, InfiniteScroll, Item, Modal, ModalController, Platform } from 'ionic-angular';
 import { SelectSearchableCloseButtonTemplateDirective } from './select-searchable-close-button-template.directive.';
@@ -7,6 +7,7 @@ import { SelectSearchableGroupTemplateDirective } from './select-searchable-grou
 import { SelectSearchableItemRightTemplateDirective } from './select-searchable-item-right-template.directive';
 import { SelectSearchableItemTemplateDirective } from './select-searchable-item-template.directive';
 import { SelectSearchableMessageTemplateDirective } from './select-searchable-message-template.directive';
+import { SelectSearchableNoItemsTemplateDirective } from './select-searchable-no-items-template.directive';
 import { SelectSearchablePageComponent } from './select-searchable-page.component';
 import { SelectSearchablePlaceholderTemplateDirective } from './select-searchable-placeholder-template.directive';
 import { SelectSearchableTitleTemplateDirective } from './select-searchable-title-template.directive';
@@ -51,7 +52,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     get _shouldStoreItemValue(): boolean {
         return this.shouldStoreItemValue && this._hasObjects;
     }
-    _filterText = '';
+    _searchText = '';
     _groups: any[] = [];
     _itemsToConfirm: any[] = [];
     _selectPageComponent: SelectSearchablePageComponent;
@@ -138,7 +139,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     @Input()
     isMultiple: boolean;
     @Input()
-    noItemsFoundText = 'No items found.';
+    noItemsText = 'No items found.';
     @Input()
     resetButtonText = 'Clear';
     @Input()
@@ -179,6 +180,8 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     groupRightTemplate: TemplateRef<any>;
     @ContentChild(SelectSearchableCloseButtonTemplateDirective, { read: TemplateRef })
     closeButtonTemplate: TemplateRef<any>;
+    @ContentChild(SelectSearchableNoItemsTemplateDirective, { read: TemplateRef })
+    noItemsTemplate: TemplateRef<any>;
     get itemsToConfirm(): any[] {
         return this._itemsToConfirm;
     }
@@ -194,7 +197,8 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         private ionForm: Form,
         private _platform: Platform,
         @Optional() private ionItem: Item,
-        private _iterableDiffers: IterableDiffers
+        private _iterableDiffers: IterableDiffers,
+        private element: ElementRef
     ) {
         this._itemsDiffer = this._iterableDiffers.find(this.items).create();
     }
@@ -206,7 +210,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
             return;
         }
 
-        this.ionItem.setElementClass('item-select-disabled', !isEnabled);
+        this.ionItem.setElementClass('item-input-disabled', !isEnabled);
     }
 
     @HostListener('click', ['$event'])
@@ -245,7 +249,9 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     }
 
     _emitChange() {
-        this.propagateChange(this.value);
+        this.propagateOnChange(this.value);
+        this._setIonItemValidityClasses();
+
         this.onChange.emit({
             component: this,
             value: this.value
@@ -259,7 +265,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
 
         this.onSearch.emit({
             component: this,
-            text: this._filterText
+            text: this._searchText
         });
     }
 
@@ -300,10 +306,10 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
             // Default filtering.
             let groups = [];
 
-            if (!this._filterText || !this._filterText.trim()) {
+            if (!this._searchText || !this._searchText.trim()) {
                 groups = this._groups;
             } else {
-                let filterText = this._filterText.trim().toLowerCase();
+                let filterText = this._searchText.trim().toLowerCase();
 
                 this._groups.forEach(group => {
                     let items = group.items.filter(item => {
@@ -416,20 +422,74 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
             true : false;
     }
 
-    private propagateChange = (_: any) => { };
+    private propagateOnChange = (_: any) => { };
+    private propagateOnTouched = () => { };
+
+    private _setIonItemValidityClasses() {
+        if (!this.ionItem) {
+            return;
+        }
+
+        // Use requestAnimationFrame() here as Ionic does.
+        // This probably helps make animation smooth.
+        // See https://github.com/rintoj/angular2-virtual-scroll/issues/33.
+        requestAnimationFrame(() => {
+            let classList = this.element.nativeElement.classList;
+            this.ionItem.setElementClass('ng-invalid', false);
+            this.ionItem.setElementClass('ng-valid', false);
+            this.ionItem.setElementClass('ng-touched', false);
+            this.ionItem.setElementClass('ng-untouched', false);
+            this.ionItem.setElementClass('ng-dirty', false);
+            this.ionItem.setElementClass('ng-pristine', false);
+
+            classList.forEach((className: string) => {
+                if (className === 'ng-invalid') {
+                    this.ionItem.setElementClass('ng-invalid', true);
+                }
+
+                if (className === 'ng-valid') {
+                    this.ionItem.setElementClass('ng-valid', true);
+                }
+
+                if (className === 'ng-touched') {
+                    this.ionItem.setElementClass('ng-touched', true);
+                }
+
+                if (className === 'ng-untouched') {
+                    this.ionItem.setElementClass('ng-untouched', true);
+                }
+
+                if (className === 'ng-dirty') {
+                    this.ionItem.setElementClass('ng-dirty', true);
+                }
+
+                if (className === 'ng-pristine') {
+                    this.ionItem.setElementClass('ng-pristine', true);
+                }
+            });
+        });
+    }
 
     /* ControlValueAccessor */
     writeValue(value: any) {
         this._setValue(value);
+        this._setIonItemValidityClasses();
     }
 
     registerOnChange(fn: any): void {
-        this.propagateChange = fn;
+        this.propagateOnChange = fn;
     }
 
-    registerOnTouched(fn: any) { }
+    registerOnTouched(fn: () => void) {
+        this.propagateOnTouched = fn;
+    }
 
-    setDisabledState(isDisabled: boolean) { }
+    setDisabledState(isDisabled: boolean) {
+        this.isEnabled = !isDisabled;
+        // We could have used _setIonItemValidityClasses() to update classes,
+        // but shouldn't as it will remove ng-valid class and probably some other
+        // ng classes, which will in turn break Ionic item highlighting styles.
+    }
     /* .ControlValueAccessor */
 
     ngOnInit() {
@@ -442,7 +502,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         this.ionForm.register(this);
 
         if (this.ionItem) {
-            this.ionItem.setElementClass('item-select', true);
+            this.ionItem.setElementClass('item-input', true);
             this.ionItem.setElementClass('item-select-searchable', true);
         }
 
@@ -473,10 +533,6 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     public open(): Promise<any> {
         let self = this;
 
-        if (self._isEnabled && !self._isOpened) {
-            self._setIonItemHasFocus(true);
-        }
-
         return new Promise(function (resolve, reject) {
             if (!self._isEnabled || self._isOpened) {
                 reject('SelectSearchable is disabled or already opened.');
@@ -490,11 +546,16 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
                 selectComponent: self
             });
             self._modal.present().then(() => {
+                // Set focus after page has opened to avoid flickering of focus highlighting
+                // before page opening.
+                self._setIonItemHasFocus(true);
                 resolve();
+            });
+            self._modal.onWillDismiss(() => {
+                self._setIonItemHasFocus(false);
             });
             self._modal.onDidDismiss((data, role) => {
                 self._isOpened = false;
-                self._setIonItemHasFocus(false);
 
                 if (self.isMultiple) {
                     self._itemsToConfirm = [];
@@ -518,6 +579,9 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
                 reject('SelectSearchable is disabled or already closed.');
                 return;
             }
+
+            self.propagateOnTouched();
+            self._setIonItemValidityClasses();
 
             // Delete old instance of infinite scroll, to avoid "Cannot read property 'enableEvents' of null"
             // error from it when page is opened next time.
@@ -569,11 +633,19 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     }
 
     public startSearch() {
-        this._isSearching = true;
+        if (!this._isEnabled) {
+            return;
+        }
+
+        this.showLoading();
     }
 
     public endSearch() {
-        this._isSearching = false;
+        if (!this._isEnabled) {
+            return;
+        }
+
+        this.hideLoading();
 
         // When inside Ionic Modal and onSearch event is used,
         // ngDoCheck() doesn't work as _itemsDiffer fails to detect changes.
@@ -584,7 +656,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     }
 
     public enableInfiniteScroll() {
-        if (!this._infiniteScroll) {
+        if (!this._isEnabled || !this._infiniteScroll) {
             return;
         }
 
@@ -592,7 +664,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     }
 
     public disableInfiniteScroll() {
-        if (!this._infiniteScroll) {
+        if (!this._isEnabled || !this._infiniteScroll) {
             return;
         }
 
@@ -600,12 +672,37 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     }
 
     public endInfiniteScroll() {
-        if (!this._infiniteScroll) {
+        if (!this._isEnabled || !this._infiniteScroll) {
             return;
         }
 
         this._infiniteScroll.complete();
         this._setItems(this.items);
         this._filteredGroups = this._groups;
+    }
+
+    public search(text: string) {
+        if (!this._isEnabled || !this._isOpened || !this.canSearch) {
+            return;
+        }
+
+        this._searchText = text;
+        this._filterItems();
+    }
+
+    public showLoading() {
+        if (!this._isEnabled) {
+            return;
+        }
+
+        this._isSearching = true;
+    }
+
+    public hideLoading() {
+        if (!this._isEnabled) {
+            return;
+        }
+
+        this._isSearching = false;
     }
 }
