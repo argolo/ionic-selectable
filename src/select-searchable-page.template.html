@@ -106,24 +106,24 @@
         </button>
     </ion-list>
     <div *ngIf="!selectComponent._filteredGroups.length || !selectComponent._filteredGroups[0].items.length">
-        <span *ngIf="selectComponent.noItemsTemplate" [ngTemplateOutlet]="selectComponent.noItemsTemplate">
+        <span *ngIf="selectComponent.searchFailTemplate" [ngTemplateOutlet]="selectComponent.searchFailTemplate">
         </span>
-        <div *ngIf="!selectComponent.noItemsTemplate" margin>
-            {{selectComponent.noItemsText}}
+        <div *ngIf="!selectComponent.searchFailTemplate" margin>
+            {{selectComponent.searchFailText}}
         </div>
     </div>
 </ion-content>
-<ion-footer *ngIf="selectComponent.canReset || selectComponent.isMultiple">
+<ion-footer *ngIf="selectComponent.canClear || selectComponent.isMultiple">
     <ion-toolbar padding>
         <ion-row>
-            <ion-col no-padding *ngIf="selectComponent.canReset" [attr.col-6]="selectComponent.canReset && selectComponent.isMultiple ? '' : null"
-                [attr.col-12]="selectComponent.canReset && !selectComponent.isMultiple ? '' : null">
-                <button ion-button full no-margin (click)="_reset()" [disabled]="!_selectedItems.length">
-                    {{selectComponent.resetButtonText}}
+            <ion-col no-padding *ngIf="selectComponent.canClear" [attr.col-6]="selectComponent.canClear && selectComponent.isMultiple ? '' : null"
+                [attr.col-12]="selectComponent.canClear && !selectComponent.isMultiple ? '' : null">
+                <button ion-button full no-margin (click)="_clear()" [disabled]="!_selectedItems.length">
+                    {{selectComponent.clearButtonText}}
                 </button>
             </ion-col>
-            <ion-col no-padding *ngIf="selectComponent.isMultiple" [attr.col-6]="selectComponent.canReset && selectComponent.isMultiple ? '' : null"
-                [attr.col-12]="!selectComponent.canReset && selectComponent.isMultiple ? '' : null">
+            <ion-col no-padding *ngIf="selectComponent.isMultiple" [attr.col-6]="selectComponent.canClear && selectComponent.isMultiple ? '' : null"
+                [attr.col-12]="!selectComponent.canClear && selectComponent.isMultiple ? '' : null">
                 <button ion-button full no-margin (click)="_ok()" [disabled]="!selectComponent.isOkButtonEnabled">
                     {{selectComponent.okButtonText}}
                 </button>

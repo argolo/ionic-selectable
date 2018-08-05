@@ -9,9 +9,9 @@ import { SelectSearchableComponent } from './select-searchable.component';
 export class SelectSearchablePageComponent implements AfterViewInit {
     @HostBinding('class.select-searchable-page')
     private _cssClass = true;
-    @HostBinding('class.select-searchable-page-can-reset')
-    private get _canResetCssClass(): boolean {
-        return this.selectComponent.canReset;
+    @HostBinding('class.select-searchable-page-can-clear')
+    private get _canClearCssClass(): boolean {
+        return this.selectComponent.canClear;
     }
     @HostBinding('class.select-searchable-page-is-multiple')
     private get _isMultipleCssClass(): boolean {
@@ -167,12 +167,13 @@ export class SelectSearchablePageComponent implements AfterViewInit {
 
             if (!this.selectComponent._hasSearch()) {
                 this.selectComponent._searchText = '';
+                this.selectComponent._setHasSearchText();
             }
         });
     }
 
-    private _reset() {
-        this.selectComponent.reset();
+    private _clear() {
+        this.selectComponent.clear();
         this.selectComponent._emitChange();
         this.selectComponent.close().then(() => {
             this.selectComponent.onClose.emit({

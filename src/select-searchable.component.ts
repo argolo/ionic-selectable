@@ -7,9 +7,9 @@ import { SelectSearchableGroupTemplateDirective } from './select-searchable-grou
 import { SelectSearchableItemRightTemplateDirective } from './select-searchable-item-right-template.directive';
 import { SelectSearchableItemTemplateDirective } from './select-searchable-item-template.directive';
 import { SelectSearchableMessageTemplateDirective } from './select-searchable-message-template.directive';
-import { SelectSearchableNoItemsTemplateDirective } from './select-searchable-no-items-template.directive';
 import { SelectSearchablePageComponent } from './select-searchable-page.component';
 import { SelectSearchablePlaceholderTemplateDirective } from './select-searchable-placeholder-template.directive';
+import { SelectSearchableSearchFailTemplateDirective } from './select-searchable-search-fail-template.directive';
 import { SelectSearchableTitleTemplateDirective } from './select-searchable-title-template.directive';
 import { SelectSearchableValueTemplateDirective } from './select-searchable-value-template.directive';
 
@@ -53,15 +53,22 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         return this.shouldStoreItemValue && this._hasObjects;
     }
     _searchText = '';
+    _hasSearchText = false;
     _groups: any[] = [];
     _itemsToConfirm: any[] = [];
     _selectPageComponent: SelectSearchablePageComponent;
-    _filteredGroups: any[];
+    _filteredGroups: any[] = [];
     _hasGroups: boolean;
     _isSearching: boolean;
     _labelText: string;
     _hasPlaceholder: boolean;
     _infiniteScroll: InfiniteScroll;
+    get isSearching(): boolean {
+        return this._isSearching;
+    }
+    get hasSearchText(): boolean {
+        return this._hasSearchText;
+    }
     get value(): any {
         return this._value;
     }
@@ -117,9 +124,9 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     set isOnSearchEnabled(isOnSearchEnabled: boolean) {
         this._isOnSearchEnabled = !!isOnSearchEnabled;
     }
-    @HostBinding('class.select-searchable-can-reset')
+    @HostBinding('class.select-searchable-can-clear')
     @Input()
-    canReset = false;
+    canClear = false;
     @Input()
     hasInfiniteScroll = false;
     @Input()
@@ -139,9 +146,9 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     @Input()
     isMultiple: boolean;
     @Input()
-    noItemsText = 'No items found.';
+    searchFailText = 'No items found.';
     @Input()
-    resetButtonText = 'Clear';
+    clearButtonText = 'Clear';
     @Input()
     okButtonText = 'OK';
     @Input()
@@ -156,6 +163,10 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     onChange: EventEmitter<any> = new EventEmitter();
     @Output()
     onSearch: EventEmitter<any> = new EventEmitter();
+    @Output()
+    onSearchFail: EventEmitter<any> = new EventEmitter();
+    @Output()
+    onSearchSuccess: EventEmitter<any> = new EventEmitter();
     @Output()
     onInfiniteScroll: EventEmitter<any> = new EventEmitter();
     @Output()
@@ -180,8 +191,8 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     groupRightTemplate: TemplateRef<any>;
     @ContentChild(SelectSearchableCloseButtonTemplateDirective, { read: TemplateRef })
     closeButtonTemplate: TemplateRef<any>;
-    @ContentChild(SelectSearchableNoItemsTemplateDirective, { read: TemplateRef })
-    noItemsTemplate: TemplateRef<any>;
+    @ContentChild(SelectSearchableSearchFailTemplateDirective, { read: TemplateRef })
+    searchFailTemplate: TemplateRef<any>;
     get itemsToConfirm(): any[] {
         return this._itemsToConfirm;
     }
@@ -237,6 +248,10 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
 
         // Convert value to string in case if it's not.
         return value.toString().replace(/\s/g, '').length < 1;
+    }
+
+    _setHasSearchText() {
+        this._hasSearchText = !this._isNullOrWhiteSpace(this._searchText);
     }
 
     _hasSearch(): boolean {
@@ -299,6 +314,8 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     }
 
     _filterItems() {
+        this._setHasSearchText();
+
         if (this._hasSearch()) {
             // Delegate filtering to the event.
             this._emitSearch();
@@ -336,7 +353,25 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
             }
 
             this._filteredGroups = groups;
+
+            if (this._areGroupsEmpty(groups)) {
+                this.onSearchFail.emit({
+                    component: this,
+                    text: this._searchText
+                });
+            } else {
+                this.onSearchSuccess.emit({
+                    component: this,
+                    text: this._searchText
+                });
+            }
         }
+    }
+
+    private _areGroupsEmpty(groups) {
+        return groups.length === 0 || groups.every(group => {
+            return !group.items || group.items.length === 0;
+        });
     }
 
     private _setItems(items: any[]) {
@@ -594,12 +629,15 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         });
     }
 
-    public reset() {
+    public clear() {
         this._setValue(this.isMultiple ? [] : null);
 
         if (this.isMultiple) {
             this._itemsToConfirm = [];
         }
+
+        this.propagateOnChange(this.value);
+        this._setIonItemValidityClasses();
     }
 
     public scrollToTop(): Promise<any> {
@@ -632,6 +670,14 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         });
     }
 
+    public resize(): Promise<any> {
+        if (!this._isOpened) {
+            return;
+        }
+
+        this._selectPageComponent._content.resize();
+    }
+
     public startSearch() {
         if (!this._isEnabled) {
             return;
@@ -653,6 +699,18 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         // Refresh items manually.
         this._setItems(this.items);
         this._filteredGroups = this._groups;
+
+        if (this._areGroupsEmpty(this._filteredGroups)) {
+            this.onSearchFail.emit({
+                component: this,
+                text: this._searchText
+            });
+        } else {
+            this.onSearchSuccess.emit({
+                component: this,
+                text: this._searchText
+            });
+        }
     }
 
     public enableInfiniteScroll() {
@@ -687,6 +745,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         }
 
         this._searchText = text;
+        this._setHasSearchText();
         this._filterItems();
     }
 
