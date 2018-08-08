@@ -21,6 +21,10 @@ export class SelectSearchablePageComponent implements AfterViewInit {
     private get _isSearchingCssClass(): boolean {
         return this.selectComponent._isSearching;
     }
+    @HostBinding('class.select-searchable-page-is-add-item-template-visible')
+    private get _isAddItemTemplateVisibleCssClass(): boolean {
+        return this.selectComponent._isAddItemTemplateVisible;
+    }
     @HostBinding('class.select-searchable-page-ios')
     private get _isIos(): boolean {
         return this.selectComponent._isIos;
@@ -31,7 +35,6 @@ export class SelectSearchablePageComponent implements AfterViewInit {
     }
     @ViewChild('searchbarComponent')
     private _searchbarComponent: Searchbar;
-    private _selectedItems: any[] = [];
     @ViewChild(Content)
     _content: Content;
     selectComponent: SelectSearchableComponent;
@@ -42,18 +45,19 @@ export class SelectSearchablePageComponent implements AfterViewInit {
     ) {
         this.selectComponent = this.navParams.get('selectComponent');
         this.selectComponent._selectPageComponent = this;
+        this.selectComponent._selectedItems = [];
 
         if (!this.selectComponent._isNullOrWhiteSpace(this.selectComponent.value)) {
             if (this.selectComponent.isMultiple) {
                 this.selectComponent.value.forEach(item => {
-                    this._selectedItems.push(item);
+                    this.selectComponent._selectedItems.push(item);
                 });
             } else {
-                this._selectedItems.push(this.selectComponent.value);
+                this.selectComponent._selectedItems.push(this.selectComponent.value);
             }
         }
 
-        this._setItemsToConfirm(this._selectedItems);
+        this._setItemsToConfirm(this.selectComponent._selectedItems);
     }
 
     ngAfterViewInit() {
@@ -70,47 +74,7 @@ export class SelectSearchablePageComponent implements AfterViewInit {
         this.selectComponent._itemsToConfirm = [].concat(items);
     }
 
-    private _isItemDisabled(item: any): boolean {
-        if (!this.selectComponent.disabledItems) {
-            return;
-        }
-
-        return this.selectComponent.disabledItems.some(_item => {
-            return this.selectComponent._getItemValue(_item) === this.selectComponent._getItemValue(item);
-        });
-    }
-
-    private _isItemSelected(item: any) {
-        return this._selectedItems.find(selectedItem => {
-            return this.selectComponent._getItemValue(item) ===
-                this.selectComponent._getStoredItemValue(selectedItem);
-        }) !== undefined;
-    }
-
-    private _deleteSelectedItem(item: any) {
-        let itemToDeleteIndex;
-
-        this._selectedItems.forEach((selectedItem, itemIndex) => {
-            if (
-                this.selectComponent._getItemValue(item) ===
-                this.selectComponent._getStoredItemValue(selectedItem)
-            ) {
-                itemToDeleteIndex = itemIndex;
-            }
-        });
-
-        this._selectedItems.splice(itemToDeleteIndex, 1);
-    }
-
-    private _addSelectedItem(item: any) {
-        if (this.selectComponent._shouldStoreItemValue) {
-            this._selectedItems.push(this.selectComponent._getItemValue(item));
-        } else {
-            this._selectedItems.push(item);
-        }
-    }
-
-    private _getMoreItems(infiniteScroll: InfiniteScroll) {
+    _getMoreItems(infiniteScroll: InfiniteScroll) {
         // TODO: Try to get infiniteScroll via ViewChild. Maybe it works in a newer Ionic version.
         // For now assign it here.
         this.selectComponent._infiniteScroll = infiniteScroll;
@@ -121,19 +85,19 @@ export class SelectSearchablePageComponent implements AfterViewInit {
         });
     }
 
-    private _select(item: any) {
+    _select(item: any) {
         if (this.selectComponent.isMultiple) {
-            if (this._isItemSelected(item)) {
-                this._deleteSelectedItem(item);
+            if (this.selectComponent._isItemSelected(item)) {
+                this.selectComponent._deleteSelectedItem(item);
             } else {
-                this._addSelectedItem(item);
+                this.selectComponent._addSelectedItem(item);
             }
 
-            this._setItemsToConfirm(this._selectedItems);
+            this._setItemsToConfirm(this.selectComponent._selectedItems);
         } else {
-            if (!this._isItemSelected(item)) {
-                this._selectedItems = [];
-                this._addSelectedItem(item);
+            if (!this.selectComponent._isItemSelected(item)) {
+                this.selectComponent._selectedItems = [];
+                this.selectComponent._addSelectedItem(item);
 
                 if (this.selectComponent._shouldStoreItemValue) {
                     this.selectComponent._select(this.selectComponent._getItemValue(item));
@@ -146,12 +110,12 @@ export class SelectSearchablePageComponent implements AfterViewInit {
         }
     }
 
-    private _ok() {
-        this.selectComponent._select(this._selectedItems);
+    _ok() {
+        this.selectComponent._select(this.selectComponent._selectedItems);
         this._close();
     }
 
-    private _close() {
+    _close() {
         // Focused input interferes with the animation.
         // Blur it first, wait a bit and then close the page.
         if (this._searchbarComponent) {
@@ -165,16 +129,16 @@ export class SelectSearchablePageComponent implements AfterViewInit {
                 });
             });
 
-            if (!this.selectComponent._hasSearch()) {
+            if (!this.selectComponent._hasOnSearch()) {
                 this.selectComponent._searchText = '';
                 this.selectComponent._setHasSearchText();
             }
         });
     }
 
-    private _clear() {
+    _clear() {
         this.selectComponent.clear();
-        this.selectComponent._emitChange();
+        this.selectComponent._emitValueChange();
         this.selectComponent.close().then(() => {
             this.selectComponent.onClose.emit({
                 component: this.selectComponent

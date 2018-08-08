@@ -91,6 +91,11 @@
             pointer-events: none;
         }
     }
+    &-item {
+        &-button {
+            width: 25px;
+        }
+    }
     &-ios {
         &.select-searchable-has-placeholder {
             .select-searchable-value-item {
@@ -128,7 +133,7 @@
             left: 0;
             right: 0;
             position: absolute;
-            background-color: #000;
+            background-color: #000000;
             opacity: 0.05;
         }
         ion-spinner {
@@ -140,16 +145,23 @@
             margin-left: -14px;
         }
     }
+    &-add-item-template {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #ffffff;
+    }
 }
 
 .select-searchable-page {
     &-ios {
-        .select-searchable-page-message {
+        .select-searchable-message {
             padding: 8px;
         }
     }
     &-md {
-        .select-searchable-page-message {
+        .select-searchable-message {
             padding: 8px 12px;
         }
     }
@@ -164,6 +176,19 @@
     &.select-searchable-page-is-searching {
         .scroll-content {
             overflow-y: hidden;
+        }
+    }
+    &.select-searchable-page-is-add-item-template-visible {
+        // Hide scroll from list content.
+        // Use immediate child selector as we don't want to apply the rule
+        // to content inside add item template defined by user.
+        >.content>.scroll-content {
+            overflow-y: hidden;
+        }
+    }
+    ion-footer {
+        ion-toolbar {
+            padding: 5px $content-padding;
         }
     }
 }

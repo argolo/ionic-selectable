@@ -1,6 +1,8 @@
 import { Component, ContentChild, DoCheck, ElementRef, EventEmitter, forwardRef, HostBinding, HostListener, Input, IterableDiffer, IterableDiffers, OnDestroy, OnInit, Optional, Output, TemplateRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Form, InfiniteScroll, Item, Modal, ModalController, Platform } from 'ionic-angular';
+import { Subscription } from 'rxjs';
+import { SelectSearchableAddItemTemplateDirective } from './select-searchable-add-item-template.directive';
 import { SelectSearchableCloseButtonTemplateDirective } from './select-searchable-close-button-template.directive.';
 import { SelectSearchableGroupRightTemplateDirective } from './select-searchable-group-right-template.directive';
 import { SelectSearchableGroupTemplateDirective } from './select-searchable-group-template.directive';
@@ -49,6 +51,12 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     private _modal: Modal;
     private _itemsDiffer: IterableDiffer<any>;
     private _hasObjects: boolean;
+    private _canClear = false;
+    private _isMultiple = false;
+    private _canAddItem = false;
+    private _addItemObservable: Subscription;
+    private _deleteItemObservable: Subscription;
+    private onItemsChange: EventEmitter<any> = new EventEmitter();
     get _shouldStoreItemValue(): boolean {
         return this.shouldStoreItemValue && this._hasObjects;
     }
@@ -56,6 +64,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     _hasSearchText = false;
     _groups: any[] = [];
     _itemsToConfirm: any[] = [];
+    _selectedItems: any[] = [];
     _selectPageComponent: SelectSearchablePageComponent;
     _filteredGroups: any[] = [];
     _hasGroups: boolean;
@@ -63,6 +72,13 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     _labelText: string;
     _hasPlaceholder: boolean;
     _infiniteScroll: InfiniteScroll;
+    _isAddItemTemplateVisible = false;
+    _isFooterVisible = true;
+    _itemToAdd: any = null;
+    _footerButtonsCount = 0;
+    get searchText(): string {
+        return this._searchText;
+    }
     get isSearching(): boolean {
         return this._isSearching;
     }
@@ -93,6 +109,8 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     }
     @Input()
     items: any[] = [];
+    @Output()
+    itemsChange: EventEmitter<any> = new EventEmitter();
     @HostBinding('class.select-searchable-is-enabled')
     @Input('isEnabled')
     get isEnabled(): boolean {
@@ -125,8 +143,14 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         this._isOnSearchEnabled = !!isOnSearchEnabled;
     }
     @HostBinding('class.select-searchable-can-clear')
-    @Input()
-    canClear = false;
+    @Input('canClear')
+    get canClear(): boolean {
+        return this._canClear;
+    }
+    set canClear(canClear: boolean) {
+        this._canClear = !!canClear;
+        this._countFooterButtons();
+    }
     @Input()
     hasInfiniteScroll = false;
     @Input()
@@ -143,12 +167,20 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     searchPlaceholder: string;
     @Input()
     placeholder: string;
-    @Input()
-    isMultiple: boolean;
+    @Input('isMultiple')
+    get isMultiple(): boolean {
+        return this._isMultiple;
+    }
+    set isMultiple(isMultiple: boolean) {
+        this._isMultiple = !!isMultiple;
+        this._countFooterButtons();
+    }
     @Input()
     searchFailText = 'No items found.';
     @Input()
     clearButtonText = 'Clear';
+    @Input()
+    addButtonText = 'Add';
     @Input()
     okButtonText = 'OK';
     @Input()
@@ -193,6 +225,8 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     closeButtonTemplate: TemplateRef<any>;
     @ContentChild(SelectSearchableSearchFailTemplateDirective, { read: TemplateRef })
     searchFailTemplate: TemplateRef<any>;
+    @ContentChild(SelectSearchableAddItemTemplateDirective, { read: TemplateRef })
+    addItemTemplate: TemplateRef<any>;
     get itemsToConfirm(): any[] {
         return this._itemsToConfirm;
     }
@@ -202,6 +236,24 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     disabledItems: any[] = [];
     @Input()
     shouldStoreItemValue = false;
+    @Input()
+    canSaveItem = false;
+    @Input()
+    canDeleteItem = false;
+    @Input('canAddItem')
+    get canAddItem(): boolean {
+        return this._canAddItem;
+    }
+    set canAddItem(canAddItem: boolean) {
+        this._canAddItem = !!canAddItem;
+        this._countFooterButtons();
+    }
+    @Output()
+    onSaveItem: EventEmitter<any> = new EventEmitter();
+    @Output()
+    onDeleteItem: EventEmitter<any> = new EventEmitter();
+    @Output()
+    onAddItem: EventEmitter<any> = new EventEmitter();
 
     constructor(
         private _modalController: ModalController,
@@ -211,6 +263,10 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         private _iterableDiffers: IterableDiffers,
         private element: ElementRef
     ) {
+        if (!this.items || !this.items.length) {
+            this.items = [];
+        }
+
         this._itemsDiffer = this._iterableDiffers.find(this.items).create();
     }
 
@@ -254,16 +310,28 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         this._hasSearchText = !this._isNullOrWhiteSpace(this._searchText);
     }
 
-    _hasSearch(): boolean {
+    _hasOnSearch(): boolean {
         return this.isOnSearchEnabled && this.onSearch.observers.length > 0;
     }
 
-    _select(selectedItem: any) {
-        this._setValue(selectedItem);
-        this._emitChange();
+    _hasOnSaveItem(): boolean {
+        return this.canSaveItem && this.onSaveItem.observers.length > 0;
     }
 
-    _emitChange() {
+    _hasOnAddItem(): boolean {
+        return this.canAddItem && this.onAddItem.observers.length > 0;
+    }
+
+    _hasOnDeleteItem(): boolean {
+        return this.canDeleteItem && this.onDeleteItem.observers.length > 0;
+    }
+
+    _select(selectedItem: any) {
+        this.value = selectedItem;
+        this._emitValueChange();
+    }
+
+    _emitValueChange() {
         this.propagateOnChange(this.value);
         this._setIonItemValidityClasses();
 
@@ -316,7 +384,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
     _filterItems() {
         this._setHasSearchText();
 
-        if (this._hasSearch()) {
+        if (this._hasOnSearch()) {
             // Delegate filtering to the event.
             this._emitSearch();
         } else {
@@ -368,6 +436,104 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         }
     }
 
+    _isItemDisabled(item: any): boolean {
+        if (!this.disabledItems) {
+            return;
+        }
+
+        return this.disabledItems.some(_item => {
+            return this._getItemValue(_item) === this._getItemValue(item);
+        });
+    }
+
+    _isItemSelected(item: any) {
+        return this._selectedItems.find(selectedItem => {
+            return this._getItemValue(item) === this._getStoredItemValue(selectedItem);
+        }) !== undefined;
+    }
+
+    _addSelectedItem(item: any) {
+        if (this._shouldStoreItemValue) {
+            this._selectedItems.push(this._getItemValue(item));
+        } else {
+            this._selectedItems.push(item);
+        }
+    }
+
+    _deleteSelectedItem(item: any) {
+        let itemToDeleteIndex;
+
+        this._selectedItems.forEach((selectedItem, itemIndex) => {
+            if (
+                this._getItemValue(item) ===
+                this._getStoredItemValue(selectedItem)
+            ) {
+                itemToDeleteIndex = itemIndex;
+            }
+        });
+
+        this._selectedItems.splice(itemToDeleteIndex, 1);
+    }
+
+    _saveItem(event: Event, item: any) {
+        event.stopPropagation();
+        this._itemToAdd = item;
+
+        if (this._hasOnSaveItem()) {
+            this.onSaveItem.emit({
+                component: this,
+                item: this._itemToAdd
+            });
+        } else {
+            this.showAddItemTemplate();
+        }
+    }
+
+    _deleteItemClick(event: Event, item: any) {
+        event.stopPropagation();
+        this._itemToAdd = item;
+
+        if (this._hasOnDeleteItem()) {
+            // Delegate logic to event.
+            this.onDeleteItem.emit({
+                component: this,
+                item: this._itemToAdd
+            });
+        } else {
+            this.deleteItem(this._itemToAdd);
+        }
+    }
+
+    _addItemClick() {
+        this._itemToAdd = null;
+
+        if (this._hasOnAddItem()) {
+            this.onAddItem.emit({
+                component: this
+            });
+        } else {
+            this.showAddItemTemplate();
+        }
+    }
+
+    private _countFooterButtons() {
+        let footerButtonsCount = 0;
+
+        if (this.canClear) {
+            footerButtonsCount++;
+        }
+
+        if (this.isMultiple) {
+            footerButtonsCount++;
+        }
+
+        if (this.canAddItem) {
+            footerButtonsCount++;
+        }
+
+        this._footerButtonsCount = footerButtonsCount;
+    }
+
     private _areGroupsEmpty(groups) {
         return groups.length === 0 || groups.every(group => {
             return !group.items || group.items.length === 0;
@@ -404,6 +570,7 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         }
 
         this._groups = groups;
+        this._filteredGroups = this._groups;
     }
 
     private _formatValueItem(item: any): string {
@@ -417,10 +584,6 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         } else {
             return this._formatItem(item);
         }
-    }
-
-    private _setValue(value: any) {
-        this.value = value;
     }
 
     private _getPropertyValue(object: any, property: string): any {
@@ -505,9 +668,23 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         });
     }
 
+    private _toggleAddItemTemplate(isVisible: boolean) {
+        // It should be possible to show/hide the template regardless
+        // canAddItem or canSaveItem parameters, so we could implement some
+        // custom behavior. E.g. adding item when search fails using onSearchFail event.
+        if (!this.addItemTemplate) {
+            return;
+        }
+
+        // To make SaveItemTemplate visible we just position it over list using CSS.
+        // We don't hide list with *ngIf or [hidden] to prevent its scroll position.
+        this._isAddItemTemplateVisible = isVisible;
+        this._isFooterVisible = !isVisible;
+    }
+
     /* ControlValueAccessor */
     writeValue(value: any) {
-        this._setValue(value);
+        this.value = value;
         this._setIonItemValidityClasses();
     }
 
@@ -553,8 +730,106 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
 
         if (itemsChanges) {
             this._setItems(this.items);
-            this._setValue(this.value);
+            this.value = this.value;
+
+            this.onItemsChange.emit({
+                component: this
+            });
         }
+    }
+
+    public addItem(item: any): Promise<any> {
+        let self = this;
+
+        // Adding item triggers onItemsChange.
+        // Return a promise that resolves when onItemsChange finishes.
+        // We need a promise os user could do something after item has been added,
+        // e.g. use search() method to find the added item.
+        this.items.unshift(item);
+
+        // Close any running subscription.
+        if (this._addItemObservable) {
+            this._addItemObservable.unsubscribe();
+        }
+
+        return new Promise(function (resolve, reject) {
+            // Complete callback isn't fired for some reason,
+            // so unsubscribe in both success and fail cases.
+            self._addItemObservable = self.onItemsChange.asObservable().subscribe(() => {
+                self._addItemObservable.unsubscribe();
+                resolve();
+            }, () => {
+                self._addItemObservable.unsubscribe();
+                reject();
+            });
+        });
+    }
+
+    public deleteItem(item: any): Promise<any> {
+        let self = this,
+            hasValueChanged = false;
+
+        // Remove deleted item from selected items.
+        if (this._selectedItems) {
+            this._selectedItems = this._selectedItems.filter(_item => {
+                return this._getItemValue(item) !== this._getStoredItemValue(_item);
+            });
+        }
+
+        // Remove deleted item from value.
+        if (this.value) {
+            if (this.isMultiple) {
+                let values = this.value.filter(value => {
+                    return value.id !== item.id;
+                });
+
+                if (values.length !== this.value.length) {
+                    this.value = values;
+                    hasValueChanged = true;
+                }
+            } else {
+                if (item === this.value) {
+                    this.value = null;
+                    hasValueChanged = true;
+                }
+            }
+        }
+
+        if (hasValueChanged) {
+            this._emitValueChange();
+        }
+
+        // Remove deleted item from list.
+        let items = this.items.filter(_item => {
+            return _item.id !== item.id;
+        });
+
+        // Refresh items on parent component.
+        this.itemsChange.emit(items);
+
+        // Refresh list.
+        this._setItems(items);
+
+        this.onItemsChange.emit({
+            component: this
+        });
+
+        // Close any running subscription.
+        if (this._deleteItemObservable) {
+            this._deleteItemObservable.unsubscribe();
+        }
+
+        return new Promise(function (resolve, reject) {
+            // Complete callback isn't fired for some reason,
+            // so unsubscribe in both success and fail cases.
+            self._deleteItemObservable = self.onItemsChange.asObservable().subscribe(() => {
+                self._deleteItemObservable.unsubscribe();
+                resolve();
+            }, () => {
+                self._deleteItemObservable.unsubscribe();
+                reject();
+            });
+        });
     }
 
     public hasValue(): boolean {
@@ -622,15 +897,17 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
             // error from it when page is opened next time.
             self._infiniteScroll = null;
             self._isOpened = false;
+            self._itemToAdd = null;
             self._modal.dismiss().then(() => {
                 self._setIonItemHasFocus(false);
+                self.hideAddItemTemplate();
                 resolve();
             });
         });
     }
 
     public clear() {
-        this._setValue(this.isMultiple ? [] : null);
+        this.value = this.isMultiple ? [] : null;
 
         if (this.isMultiple) {
             this._itemsToConfirm = [];
@@ -670,14 +947,6 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         });
     }
 
-    public resize(): Promise<any> {
-        if (!this._isOpened) {
-            return;
-        }
-
-        this._selectPageComponent._content.resize();
-    }
-
     public startSearch() {
         if (!this._isEnabled) {
             return;
@@ -698,7 +967,6 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         // See https://github.com/eakoriakin/ionic-select-searchable/issues/44.
         // Refresh items manually.
         this._setItems(this.items);
-        this._filteredGroups = this._groups;
 
         if (this._areGroupsEmpty(this._filteredGroups)) {
             this.onSearchFail.emit({
@@ -736,7 +1004,6 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
 
         this._infiniteScroll.complete();
         this._setItems(this.items);
-        this._filteredGroups = this._groups;
     }
 
     public search(text: string) {
@@ -763,5 +1030,13 @@ export class SelectSearchableComponent implements ControlValueAccessor, OnInit, 
         }
 
         this._isSearching = false;
+    }
+
+    public showAddItemTemplate() {
+        this._toggleAddItemTemplate(true);
+    }
+
+    public hideAddItemTemplate() {
+        this._toggleAddItemTemplate(false);
     }
 }
